@@ -9,12 +9,6 @@ pipeline {
             }
         }
 
-        stage('Docker Login') {
-            steps {
-                // Use your Docker Hub credentials
-                bat "docker login -u erumfaiz -p Erum@3005"
-            }
-        }
 
         stage('Push Docker Image to Docker Hub') {
             steps {
