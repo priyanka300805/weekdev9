@@ -1,36 +1,38 @@
 pipeline {
     agent any
-   
-    stages {
 
+    stages {
         stage('Build Docker Image') {
             steps {
-                echo "Build Docker Image"
-                bat "docker build -t seleniumdemoapp:v1 ."
+                echo "Building Docker Image"
+                bat "docker build -t erum_repo:v1 ."
             }
         }
+
         stage('Docker Login') {
             steps {
-                  bat 'docker login -u erumfaiz -p Erum@3005'
-                }
-            }
-        stage('push Docker Image to Docker Hub') {
-            steps {
-                echo "push Docker Image to Docker Hub"
-                bat "docker tag seleniumdemoapp:v1 erumfaiz/sample:seleniumtestimage"               
-                    
-                bat "docker push erumfaiz/sample:seleniumtestimage"
-                
+                // Use your Docker Hub credentials
+                bat "docker login -u erumfaiz -p Erum@3005"
             }
         }
-        stage('Deploy to Kubernetes') { 
-            steps { 
-                    // apply deployment & service 
-                    bat 'kubectl apply -f deployment.yaml --validate=false' 
-                    bat 'kubectl apply -f service.yaml' 
-            } 
+
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                echo "Pushing Docker Image to Docker Hub"
+                bat "docker tag erum_repo:v1 erumfaiz/erum_repo:v1"
+                bat "docker push erumfaiz/erum_repo:v1"
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo "Deploying to Kubernetes"
+                bat "kubectl apply -f deployment.yaml --validate=false"
+                bat "kubectl apply -f service.yaml"
+            }
         }
     }
+
     post {
         success {
             echo 'Pipeline completed successfully!'
