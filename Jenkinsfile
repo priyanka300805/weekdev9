@@ -1,18 +1,61 @@
-tarted by user namitha
-hudson.plugins.git.GitException: Command "git.exe fetch --tags --force --progress --prune -- origin +refs/heads/master:refs/remotes/origin/master" returned status code 128:
-stdout: 
-stderr: fatal: couldn't find remote ref refs/heads/master
+pipeline {
+    agent any
+   
+    stages {
 
-	at PluginClassLoader for git-client//org.jenkinsci.plugins.gitclient.CliGitAPIImpl.launchCommandIn(CliGitAPIImpl.java:2847)
-	at PluginClassLoader for git-client//org.jenkinsci.plugins.gitclient.CliGitAPIImpl.launchCommandWithCredentials(CliGitAPIImpl.java:2192)
-	at PluginClassLoader for git-client//org.jenkinsci.plugins.gitclient.CliGitAPIImpl$1.execute(CliGitAPIImpl.java:641)
-	at PluginClassLoader for git//jenkins.plugins.git.GitSCMFileSystem$BuilderImpl.build(GitSCMFileSystem.java:408)
-Caused: java.io.IOException
-	at PluginClassLoader for git//jenkins.plugins.git.GitSCMFileSystem$BuilderImpl.build(GitSCMFileSystem.java:413)
-	at PluginClassLoader for scm-api//jenkins.scm.api.SCMFileSystem.of(SCMFileSystem.java:219)
-	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition.create(CpsScmFlowDefinition.java:120)
-	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition.create(CpsScmFlowDefinition.java:72)
-	at PluginClassLoader for workflow-job//org.jenkinsci.plugins.workflow.job.WorkflowRun.run(WorkflowRun.java:317)
-	at hudson.model.ResourceController.execute(ResourceController.java:101)
-	at hudson.model.Executor.run(Executor.java:454)
-Finished: FAILURE
+        stage('Run Selenium Tests with pytest') {
+            steps {
+                    echo "Running Selenium Tests using pytest"
+
+                    // Install Python dependencies
+                    bat 'pip install -r requirements.txt'
+
+                    // ✅ Start Flask app in background
+                    bat 'start /B python app.py'
+
+                    // ⏱️ Wait a few seconds for the server to start
+                    bat 'ping 127.0.0.1 -n 5 > nul'
+
+                    // ✅ Run tests using pytest
+                    //bat 'pytest tests\\test_registrationapp.py --maxfail=1 --disable-warnings --tb=short'
+                    bat 'pytest -v'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo "Build Docker Image"
+                bat "docker build -t seleniumdemoapp:v1 ."
+            }
+        }
+        stage('Docker Login') {
+            steps {
+                  bat 'docker login -u erumfaiz -p Erum@3005'
+                }
+            }
+        stage('push Docker Image to Docker Hub') {
+            steps {
+                echo "push Docker Image to Docker Hub"
+                bat "docker tag seleniumdemoapp:v1 erumfaiz/sample:seleniumtestimage"               
+                    
+                bat "docker push erumfaiz/sample:seleniumtestimage"
+                
+            }
+        }
+        stage('Deploy to Kubernetes') { 
+            steps { 
+                    // apply deployment & service 
+                    bat 'kubectl apply -f deployment.yaml --validate=false' 
+                    bat 'kubectl apply -f service.yaml' 
+            } 
+        }
+    }
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Please check the logs.'
+        }
+    }
+}
